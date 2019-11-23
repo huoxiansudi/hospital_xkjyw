@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ywfy.kjywwh.dao.YsDataDao">
+
+    <select id="ysDataCount" resultType="java.lang.Integer"
+            parameterType="com.ywfy.kjywwh.domain.QueryCondition">
+        SELECT count(1) from gy_zgxx a
+        left join YPFX_GYDM b on a.zgid=b.dm
+        <if test="condition.ysxx != null">
+            where a.zgid = '${condition.ysxx}'
+        </if>
+    </select>
+
+    <select id="ysDataList" resultType="com.ywfy.kjywwh.entity.YsEntity"
+            parameterType="com.ywfy.kjywwh.domain.QueryCondition">
+
+        select a.zgid,a.xm,b.bz
+        from gy_zgxx a
+        left join YPFX_GYDM b on a.zgid=b.dm
+        <if test="condition.ysxx != null">
+            where a.zgid = '${condition.ysxx}'
+        </if>
+
+    </select>
+
+    <select id="ykjqxYsCount" resultType="java.lang.Integer"
+            parameterType="com.ywfy.kjywwh.domain.QueryCondition">
+        SELECT count(1) from YPFX_GYDM
+        <if test="condition.ysxx != ''">
+           where dm = '${condition.ysxx}'
+        </if>
+    </select>
+
+    <select id="ykjqxYsList" resultType="com.ywfy.kjywwh.entity.YsEntity"
+            parameterType="com.ywfy.kjywwh.domain.QueryCondition">
+
+        select dm zgid,mc xm,bz from YPFX_GYDM where zfpb=0
+
+    </select>
+
+    <update id="yskjywwhUpdate" parameterType="java.lang.String">
+        UPDATE YPFX_GYDM SET bz=#{xkjywxj} WHERE dm=#{ysxx}
+    </update>
+
+    <insert id="yskjywwhInsert" parameterType="java.lang.String">
+
+        INSERT INTO YPFX_GYDM(dmlb,dm,mc,zfpb,bz) values(1,#{ysxx},#{mc},0,#{xkjywxj})
+
+    </insert>
+
+
+</mapper>

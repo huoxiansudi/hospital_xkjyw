@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8"/>
+    <title>药品维护界面</title>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport"/>
+
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="css/ionicons.min.css"/>
+    <link rel="stylesheet" href="dist/css/AdminLTE.min.css"/>
+    <link rel="stylesheet" href="dist/css/skins/_all-skins.min.css"/>
+
+    <link rel="stylesheet" href="plugins/datatables/jquery.dataTables.min.css"/>
+    <link rel="stylesheet" href="plugins/datatables/buttons.dataTables.min.css"/>
+
+    <link rel="stylesheet" href="plugins/datatables/dataTables.bootstrap.css"/>
+    <link rel="stylesheet" href="plugins/daterangepicker/daterangepicker.css"/>
+    <link rel="stylesheet" href="plugins/datepicker/datepicker3.css"/>
+    <link rel="stylesheet" href="plugins/prompt/css/xcConfirm.css"/>
+    <style>
+        .box-body {
+            overflow-x: scroll
+        }
+    </style>
+
+</head>
+
+
+<body class="hold-transition skin-blue sidebar-mini">
+<div>
+    <div>
+        <section class="content-header">
+            <h1 align="center">
+                <span style="font-size: 35px; font-family: 微软雅黑; color: #a94442">药品维护界面</span>
+            </h1>
+        </section>
+
+        <section class="content">
+
+            <div class="box">
+                <div class="box-search">
+                    <form onSubmit="return false;" id="attendQueryForm">
+
+                        <table border="0">
+                            <tr>
+                                <td>快速定位:</td>
+                                <td>
+                                   <input type="text" class="form-control pull-left" style="width: 95px" id="srk"
+                                          placeholder="输入首字母"
+                                           onkeyup="toUpperCase(this)" onchange="getYpxx(this)"/>
+                                    <!--<input type="text" class="form-control pull-left" placeholder="请选择药品名称"
+                                           id="ypmc" name="ypmc" list="select" autocomplete="off"
+                                           style="display:none"/>-->
+                                </td>
+                                <td>
+                                    <select class="form-control pull-left" id="ypmc" name="ypmc" style="width: 250px">
+                                        <option value="0">请选择药品名称</option>
+                                    </select>
+
+                                    <!--<datalist id="select" style="background-color:#FFFFFF;">
+                                        <option>请选择</option>
+
+                                    </datalist>-->
+                                </td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <button type="submit" id="submit" class="btn btn-primary" onclick="attendQuery()">查询</button>
+                                </td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <button class="btn btn-primary kjywxj" id="fxzsyj_button"
+                                            onclick="szcXzsyj(this.id)">设置成非限制使用级
+                                    </button>
+                                </td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <button class="btn btn-primary kjywxj" id="xzsyj_button"
+                                            onclick="szcXzsyj(this.id)">设置成限制使用级
+                                    </button>
+                                </td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <button class="btn btn-primary kjywxj" id="tssyj_button"
+                                            onclick="szcXzsyj(this.id)">设置成特殊使用级
+                                    </button>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </form>
+
+                </div>
+
+                <div class="box-body">
+                    <table id="attend_grid" class="table table-bordered table-striped" style="width: 100%">
+                        <thead>
+                        <tr class="attendList">
+                            <th style="width: 20px;padding-right: 8px;">
+                                <input text-align="center" type="checkbox" id="checkAll" name="checkAll"
+                                       class="checkAll" onclick="checkAll()"/></th>
+                            <th style="width: 10px;padding-right: 8px;">序号</th>
+                            <th style="width: 30px;padding-right: 8px;">药品序号</th>
+                            <th style="width: 70px;padding-right: 8px;">药品名称</th>
+                            <th style="width: 70px;padding-right: 8px;">药品规格</th>
+                            <th style="width: 45px;padding-right: 8px;">单位</th>
+                            <th style="width: 70px;padding-right: 8px;">账簿类别</th>
+                            <th style="width: 70px;padding-right: 8px;">药品别名</th>
+                            <th style="width: 75px;padding-right: 8px;">抗菌药物线级</th>
+                            <!--<th style="width: 75px;padding-right: 8px;">选项</th>-->
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+                <div id="grid_pager"></div>
+
+            </div>
+        </section>
+    </div>
+
+</div>
+
+<script src="js/jquery-1.10.2.js"></script>
+<script src="bootstrap/js/bootstrap.min.js"></script>
+<script src="dist/js/app.min.js"></script>
+<script src="plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="plugins/datatables/dataTables.buttons.min.js"></script>
+<script src="plugins/datatables/jszip.min.js"></script>
+<script src="plugins/datatables/buttons.html5.min.js"></script>
+<script src="plugins/datatables/dataTables.bootstrap.min.js"></script>
+<script src="plugins/datepicker/bootstrap-datepicker.js"></script>
+<script src="plugins/daterangepicker/moment.min.js"></script>
+<script src="plugins/daterangepicker/daterangepicker.js"></script>
+<script src="plugins/datepicker/locales/bootstrap-datepicker.zh-CN.js"></script>
+<script src="js/common.js"></script>
+<script src="js/ypwhFunc.js"></script>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+
+    /*var oRegion = document.getElementById("ypmc");     //需要弹出下拉列表的文本框
+    var oDivList = document.getElementById("ypmcList");         //要弹出的下拉列表
+    var contentD = document.getElementById("contentDiv");
+    var QueryCode = "COPY_aibsm.enums.sm.receive.support_row";
+    var bNoAdjusted = true;
+    var html = "";
+    var all_html = "";
+    var colOptions = "";
+    $(document).ready(function () {
+        // oRegion.style.background = "url(/bomc3/jx/boms/busBackup/select2.jpg)  right -3px no-repeat";
+        oRegion.style.backgroundColor = "#fff";
+        /!*getJsonListFromCode(QueryCode, function (data) {
+            if (data != null && data != "") {           // 存在查询结果 ;
+                $.each(data, function (i, e) {
+                    all_html += "<li style='text-align:left; padding-left:5px;'>" + e.VALUE + "</li>";
+                });
+            }
+        }, '');*!/
+    });
+    $(document).click(function (e) {
+        var target_id = $(e.target).attr('id');             // 获取点击dom元素id ;
+        if (target_id != oRegion.id) {
+            oDivList.style.display = "none";　　//隐藏div，实现关闭下拉框的效果 ;
+            // oRegion.style.background = "url(/bomc3/jx/boms/busBackup/select2.jpg)  right -3px no-repeat";
+            oRegion.style.backgroundColor = "#fff";
+        }
+    });
+
+    //设置下列选择项的一些事件
+    function setEvent(colOptions) {
+        for (var i = 0; i < colOptions.length; i++) {
+            colOptions[i].onclick = function ()　　　//为列表项添加单击事件
+            {
+                oRegion.value = this.innerText;     //显示选择的文本；
+                oRegion.style.backgroundColor = "#219DEF";
+                oDivList.style.display = "none";
+            };
+            colOptions[i].onmouseover = function ()　//为列表项添加鼠标移动事件
+            {
+                this.style.backgroundColor = "#219DEF";
+            };
+            colOptions[i].onmouseout = function ()  //为列表项添加鼠标移走事件
+            {
+                this.style.backgroundColor = "";
+            };
+        }
+    }
+
+    function InitializeDIV(value) {
+        var sql = "";
+        if (value != "") {
+            html += "<ul><li style='text-align:left; padding-left:3px;'>按" + '"' + "<font style='color :red;'>" + value + "</font>" + '"' + "检索:</li>";
+            sql += 'value=' + value;
+        } else {
+            html += "<ul><li style='text-align:left; padding-left:3px;'>请输入检索条件:" + "</li>";
+            sql = "";
+        }
+        getJsonListFromCodeSync(QueryCode, function (data) {
+            if (data != null && data != "") {           // 存在查询结果 ;
+                $.each(data, function (i, e) {
+                    html += "<li style='text-align:left; padding-left:3px;'>" + e.VALUE + "</li>";
+                });
+            } else {         // 没有查询结果;
+                html = "";
+                html += "<ul><li style='text-align:left; padding-left:3px;'>无法匹配:" + '"' + "<font style='color :red;'>" + value + "</font>" + '"' + "</li>";
+                html += all_html;
+            }
+            html += "</ul>";
+        }, sql);
+        contentD.innerHTML = html;
+        colOptions = $("#contentDiv li"); //所有列表元素
+        setEvent(colOptions);
+    }
+
+    //文本获得焦点时的事件
+    oRegion.onfocus = function () {
+        // oRegion.style.background = "url(/bomc3/jx/boms/busBackup/select.jpg)  right -3px no-repeat";
+        oRegion.style.backgroundColor = "#fff";
+        oDivList.style.display = "block";
+        if (bNoAdjusted)　　//控制div是否已经显示的变量
+        {
+            bNoAdjusted = false;
+            //设置下拉列表的宽度和位置
+            oDivList.style.width = this.offsetWidth - 4;
+            oDivList.style.posTop = oRegion.offsetTop + oRegion.offsetHeight + 1;          // 设定高度
+            oDivList.style.posLeft = oRegion.offsetLeft + 1;               // 设定与左边的位置;
+        }
+    };
+    // 文本内容改变时监听事件 ;
+    oRegion.onpropertychange = function () {
+        contentD.innerHTML = ""; // 情况div中所有li元素;
+        html = "";
+        InitializeDIV(oRegion.value);
+    };*/
+
+
+    var table;
+    var mydate = getNowFormatDate();
+
+    $(function () {
+
+        $.fn.dataTable.ext.errMode = 'none';
+        //初始化表格
+        table = $("#attend_grid")
+            .on('error.dt', function (e, settings, techNote, message) {
+                console.info(message)
+            }).dataTable({
+                dom: 'lfBtrip',
+                buttons: [{
+                    extend: 'excelHtml5',
+                    text: '导出',  //按钮标题
+                    title: mydate + "-抗菌药物展示", //导出的excel标题
+                    customize: function (xlsx) {
+                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
+//                        $('row c[r^="C"]', sheet).attr( 's', '2' );
+                    },
+                    exportOptions: {
+                        format: {
+                            body: function (data, row, column, node) {
+                                if (column === 0) {
+                                    return '';
+                                } else {
+                                    return column === 1 ? '' : data;
+                                }
+                            }
+                        }
+                    }
+                }],
+                language: lang, //提示信息
+                autoWidth: true, //启用自动调整列宽
+                stripeClasses: ["odd", "even"], //为奇偶行加上样式，兼容不支持CSS伪类的场合
+                processing: true, //隐藏加载提示,自行处理
+                serverSide: false, //启用服务器端分页
+                searching: true, //禁用原生搜索
+                orderMulti: false, //启用多列排序
+                order: [], //取消默认排序查询,否则复选框一列会出现小箭头
+                renderer: "bootstrap", //渲染样式：Bootstrap和jquery-ui
+                pagingType: "simple_numbers", //分页样式：simple,simple_numbers,full,full_numbers
+                lengthMenu: [20, 250, 300, 350],
+                columnDefs: [{
+                    "targets": 'nosort', //列的样式名
+                    "orderable": false //包含上样式名‘nosort'的禁止排序
+                }],
+                ajax: function (data, callback, settings) {
+                    //封装请求参数
+                    var param = formToJson("attendQueryForm");
+
+                    //ajax请求数据
+                    $.ajax({
+                        type: "GET",
+                        url: "/ypDataList",
+                        cache: false, //禁用缓存
+                        data: param, //传入组装的参数
+                        dataType: "json",
+                        success: function (result) {
+//                            console.log(result);
+                            setTimeout(function () {
+                                //封装返回数据
+                                var returnData = {};
+                                returnData.draw = data.startRow;//这里直接自行返回了draw计数器,应该由后台返回
+                                returnData.recordsTotal = result.totalRows;//返回数据全部记录
+                                returnData.recordsFiltered = result.totalRows;//后台不实现过滤功能，每次查询均视作全部结果
+                                returnData.data = result.items;//返回的数据列表
+
+                                //此时的数据需确保正确无误，异常判断应在执行此回调前自行处理完毕
+                                callback(returnData);
+                            }, 200);
+                        }
+                    });
+                },
+                /*"aoColumnDefs":[//设置列的属性，此处设置第一列不排序
+                    {
+                        "targets":-1,
+                        "data": null,
+                        "bSortable": false,
+                        "defaultContent":"<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a id=\"edit\" href=\"#\">修改</a>&nbsp;&nbsp;&nbsp;&nbsp;<a id=\"del\"  href=\"#\">删除</a></p>"
+                    }
+                ],*/
+
+
+                //列表表头字段
+                columns: [
+                    {
+                        "sClass": "text-center",
+                        "data": "ypxh",
+                        "render": function (data, type, full, row_col) {
+                            var i = row_col.row + 1 + row_col.settings._iDisplayStart;
+                            return '<input type="checkbox"  id="child' + i + '" class="checkChild" name="checkChild" onchange="hah2(this)" onpropertychange="hah(this)"  value="' + data + '" />';
+                        },
+                        "bSortable": false
+                    },
+                    {"sClass": "text-center", "data": null, "targets": 0},
+                    {
+                        "data": "ypxh", "visible": false, render: function (data, type, full) {
+                            return data;
+                        }
+                    },
+                    {
+                        "data": "ypmc", render: function (data, type, full) {
+                            return data;
+                        }
+                    },
+                    {
+                        "data": "ypgg", render: function (data, type, full) {
+                            return data;
+                        }
+                    },
+                    {
+                        "data": "ypbzdw", render: function (data, type, full) {
+                            return data;
+                        }
+                    },
+                    {
+                        "data": "zbmc", render: function (data, type, full) {
+                            return data;
+                        }
+                    },
+                    {
+                        "data": "ypbm", render: function (data, type, full) {
+                            return data;
+                        }
+                    },
+                    {
+                        "data": "xkjywxj",
+                        render: function (data, type, full) {
+                            if (data == "0") {
+                                return "非抗菌药物";
+                            } else if (data == "1") {
+                                return "非限制使用级";
+                            } else if (data == "2") {
+                                return "限制使用级";
+                            } else if (data == "3") {
+                                return "特殊使用级";
+                            }
+                        }
+                    }
+                    /*,{
+                        "data": null,
+                        "targets": -1,
+                        "render": function(data, type, row, meta) {
+                            return '<input type="radio" name="radios">'
+                        }
+                    }*/
+                ]
+
+            })
+            .api();
+        //此处需调用api()方法,否则返回的是JQuery对象而不是DataTables的API对象
+
+        //增加序号列
+        table.on('order.dt search.dt', function () {
+            table.column(1, {    //索引"1"代表第2列
+                search: 'applied',
+                order: 'applied'
+            }).nodes().each(function (cell, i) {
+                cell.innerHTML = i + 1;
+            });
+        });
+
+    });
+    /*]]>*/
+</script>
+
+</body>
+</html>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ywfy.kjywwh.dao.YpDataDao">
+
+    <select id="ypDataCount" resultType="java.lang.Integer"
+            parameterType="com.ywfy.kjywwh.domain.QueryCondition">
+
+        SELECT count(1) from GY_YPMCGGZD
+        <if test="condition.ypmc != 0">
+            where ypxh = '${condition.ypmc}'
+        </if>
+        <if test="condition.ypmc == 0">
+            where XKJYWXJ is not null
+        </if>
+    </select>
+
+    <select id="sskList" resultType="com.ywfy.kjywwh.entity.YpEntity"
+            parameterType="java.lang.String">
+
+        select a.ypxh,a.ypmc,a.ypgg,a.ypbzdw,a.xkjywxj
+        from GY_YPMCGGZD a
+        <if test="srm != null">
+            where a.SRM1 like '%${srm}%'
+        </if>
+    </select>
+
+    <select id="ypDataList" resultType="com.ywfy.kjywwh.entity.YpEntity"
+            parameterType="com.ywfy.kjywwh.domain.QueryCondition">
+
+        select a.ypxh,a.ypmc,a.ypgg,a.ypbzdw,b.zbmc,c.ypbm,a.xkjywxj
+        from GY_YPMCGGZD a
+        left join yk_zblb b on a.zblb=b.zblb
+        left join gy_ypbmk c on a.flxh= c.xh
+        <if test="condition.ypmc != 0">
+            where a.ypxh = '${condition.ypmc}'
+        </if>
+        <if test="condition.ypmc == 0">
+            where a.XKJYWXJ is not null
+        </if>
+
+    </select>
+
+    <update id="updateGyYpggzd" parameterType="java.lang.String">
+        UPDATE GY_YPMCGGZD SET xkjywxj=#{xkjywxj} WHERE ypxh=#{ypxh}
+    </update>
+
+    <update id="updateGyCdjg" parameterType="java.lang.String">
+        UPDATE GY_YPCDJG SET xkjywxj=#{xkjywxj} WHERE ypxh=#{ypxh}
+    </update>
+
+</mapper>

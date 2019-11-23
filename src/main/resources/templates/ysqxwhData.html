@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8"/>
+    <title>医生抗菌药物权限维护界面</title>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport"/>
+
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="css/ionicons.min.css"/>
+    <link rel="stylesheet" href="dist/css/AdminLTE.min.css"/>
+    <link rel="stylesheet" href="dist/css/skins/_all-skins.min.css"/>
+
+    <link rel="stylesheet" href="plugins/datatables/jquery.dataTables.min.css"/>
+    <link rel="stylesheet" href="plugins/datatables/buttons.dataTables.min.css"/>
+
+    <link rel="stylesheet" href="plugins/datatables/dataTables.bootstrap.css"/>
+    <link rel="stylesheet" href="plugins/daterangepicker/daterangepicker.css"/>
+    <link rel="stylesheet" href="plugins/datepicker/datepicker3.css"/>
+    <link rel="stylesheet" href="plugins/prompt/css/xcConfirm.css"/>
+    <style>
+        .box-body {
+            overflow-x: scroll
+        }
+    </style>
+
+</head>
+
+
+<body class="hold-transition skin-blue sidebar-mini">
+<div>
+    <div>
+        <section class="content-header">
+            <h1 align="center">
+                <span style="font-size: 35px; font-family: 微软雅黑; color: #a94442">医生抗菌药物权限维护界面</span>
+            </h1>
+        </section>
+
+        <section class="content">
+
+            <div class="box">
+                <div class="box-search">
+                    <form onSubmit="return false;" id="attendQueryForm">
+
+                        <table border="0">
+                            <tr>
+                                <td>快速定位:</td>
+                                <td>
+                                   <input type="text" class="form-control pull-left" id="ysxx" name="ysxx"
+                                          placeholder="输入工号或名字"/>
+                                </td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <button type="submit" id="submit" class="btn btn-primary" onclick="attendQuery()">查询</button>
+                                </td>
+                                <td>&nbsp;</td>
+                                <td>
+                                    <button class="btn btn-primary kjywxj" id="xzsyj_button"
+                                            onclick="ysxxSave()" style="display: none">保存
+                                    </button>
+                                </td>
+                            </tr>
+                        </table>
+
+                    </form>
+
+                </div>
+
+                <div class="box-body">
+                    <table id="attend_grid" class="table table-bordered table-striped" style="width: 100%">
+                        <thead>
+                        <tr class="attendList">
+                            <th style="width: 10px;padding-right: 8px;">序号</th>
+                            <th style="width: 30px;padding-right: 8px;">医生工号</th>
+                            <th style="width: 65px;padding-right: 8px;">医生名称</th>
+                            <th style="width: 50px;padding-right: 8px;">全选</th>
+                            <th style="width: 70px;padding-right: 8px;">非限制使用级(门诊)</th>
+                            <th style="width: 70px;padding-right: 8px;">限制使用级(门诊)</th>
+                            <th style="width: 70px;padding-right: 8px;">特殊使用级(门诊)</th>
+                            <th style="width: 70px;padding-right: 8px;">非限制使用级(住院)</th>
+                            <th style="width: 75px;padding-right: 8px;">限制使用级(住院)</th>
+                            <th style="width: 75px;padding-right: 8px;">特殊使用级(住院)</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+                <div id="grid_pager"></div>
+
+            </div>
+        </section>
+
+    </div>
+
+</div>
+
+<script src="js/jquery-1.10.2.js"></script>
+<script src="bootstrap/js/bootstrap.min.js"></script>
+<script src="dist/js/app.min.js"></script>
+<script src="plugins/datatables/jquery.dataTables.min.js"></script>
+<script src="plugins/datatables/dataTables.buttons.min.js"></script>
+<script src="plugins/datatables/jszip.min.js"></script>
+<script src="plugins/datatables/buttons.html5.min.js"></script>
+<script src="plugins/datatables/dataTables.bootstrap.min.js"></script>
+<script src="plugins/datepicker/bootstrap-datepicker.js"></script>
+<script src="plugins/daterangepicker/moment.min.js"></script>
+<script src="plugins/daterangepicker/daterangepicker.js"></script>
+<script src="plugins/datepicker/locales/bootstrap-datepicker.zh-CN.js"></script>
+<script src="js/common.js"></script>
+<script src="js/yswhFunc.js"></script>
+
+<script type="text/javascript" th:inline="javascript">
+    /*<![CDATA[*/
+
+    var table;
+    var mydate = getNowFormatDate();
+    var i;
+    var inputText;
+
+    $(function () {
+        $.fn.dataTable.ext.errMode = 'none';
+        //初始化表格
+        table = $("#attend_grid")
+            .on('error.dt', function (e, settings, techNote, message) {
+                console.info(message)
+            }).dataTable({
+                dom: 'lfBtrip',
+                buttons: [{
+                    extend: 'excelHtml5',
+                    text: '导出',
+                    // titleAttr: '导出EXCEL模板',
+                    title: mydate + "-医生权限一览", //导出的excel标题
+                    customize: function (xlsx) {
+                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                    },
+                    exportOptions: {
+                        // columns: [0, 1, 2, 4, 5, 6, 7, 8,9],//设置需要导出的列索引
+                        sClass: "text-center",
+                        format: {
+                            body: function (data, row, column, node) {
+
+                                if (column === 0) {
+                                    return row+1; //序号列表
+                                } else if(node.childNodes[0] !=null && column === 3){
+                                    return node.childNodes[0].value == "111111" ? '全有':'部分'
+                                }else if(column === 4 || column === 5 || column === 6 ||
+                                    column === 7 || column === 8 || column === 9){
+                                    if(node.childNodes[0] ==null){
+                                        return "无";
+                                    }else{
+                                        return node.childNodes[0].value == "1" ? '有':'无'
+                                    }
+                                }else {
+                                    return data;
+                                }
+                            }
+                        }
+                    }
+                }],
+                language: lang, //提示信息
+                autoWidth: true, //启用自动调整列宽
+                stripeClasses: ["odd", "even"], //为奇偶行加上样式，兼容不支持CSS伪类的场合
+                processing: true, //隐藏加载提示,自行处理
+                serverSide: false, //启用服务器端分页
+                searching: true, //禁用原生搜索
+                orderMulti: false, //启用多列排序
+                order: [], //取消默认排序查询,否则复选框一列会出现小箭头
+                renderer: "bootstrap", //渲染样式：Bootstrap和jquery-ui
+                pagingType: "simple_numbers", //分页样式：simple,simple_numbers,full,full_numbers
+                lengthMenu: [20, 250, 300, 350],
+                columnDefs: [{
+                    "targets": 'nosort', //列的样式名
+                    "orderable": false //包含上样式名‘nosort'的禁止排序
+                }],
+                ajax: function (data, callback, settings) {
+                    //封装请求参数
+                    var param = formToJson("attendQueryForm");
+
+                    //ajax请求数据
+                    $.ajax({
+                        type: "GET",
+                        url: "/ysDataList",
+                        cache: false, //禁用缓存
+                        data: param, //传入组装的参数
+                        dataType: "json",
+                        success: function (result) {
+                            setTimeout(function () {
+                                //封装返回数据
+                                var returnData = {};
+                                returnData.draw = data.startRow;//这里直接自行返回了draw计数器,应该由后台返回
+                                returnData.recordsTotal = result.totalRows;//返回数据全部记录
+                                returnData.recordsFiltered = result.totalRows;//后台不实现过滤功能，每次查询均视作全部结果
+                                returnData.data = result.items;//返回的数据列表
+                                //此时的数据需确保正确无误，异常判断应在执行此回调前自行处理完毕
+                                callback(returnData);
+                            }, 200);
+                            inputText=$("#ysxx").val();
+                            if(inputText==""){
+                                $("#xzsyj_button").css('display', 'none'); //空时隐藏
+                            }else{
+                                $("#xzsyj_button").css('display', 'block');
+                            }
+                        },
+                        complete:function(){
+                            //请求完成的处理
+                            var text=$("#ysxx").val();
+                            // $(":checkbox[name='kjywChild']").disabled=true;
+                            var aa = document.getElementById("kjywChild1")
+                            if(aa!=null){
+                                aa.disabled=true;
+                            }
+                        }
+                    });
+                },
+                //列表表头字段
+                columns: [
+                    {"sClass": "text-center", "data": null, "targets": 0},
+                    {
+                        "sClass": "text-center",
+                        "data": "zgid", /*"visible": false,*/
+                        "render": function (data, type, row, meta) {
+                            return data;
+                        }
+                    },
+                    {
+                        "sClass": "text-center",
+                        "data": "xm",
+                        "render": function (data, type, row, meta) {
+                            return data;
+                        }
+                    },
+                    {
+                        "sClass": "text-center",
+                        "bSortable": false,
+                        "data": "bz",
+                        "render": function (data, type, row, meta) {
+                            i = meta.row + 1 + meta.settings._iDisplayStart;
+
+                            if(data!=null){
+                                var splitBz = data.indexOf("0");
+                            }
+
+                            if(splitBz==-1 && inputText==""){  //全选中 且传入值为空
+                                return '<input type="checkbox" disabled="disabled" checked="checked" id="child'+i+'"' +
+                                    'class="checkChild" name="checkChild" onchange="syxjqx(this)" value="'+data+'"/>使用线级全选';
+                            }else if(splitBz==-1 && inputText!=""){ //全选中 传入值不为空
+                                return '<input type="checkbox" checked="checked" id="child' + i + '" class="checkChild" ' +
+                                    'name="checkChild" onchange="syxjqx(this)"  value="' + data + '" />使用线级全选';
+                            }else if(splitBz!=-1 && inputText==""){ //没有全选中 传入值为空
+                                return '<input type="checkbox" disabled="disabled" id="child' + i + '" class="checkChild" ' +
+                                    'name="checkChild" onchange="syxjqx(this)"  value="' + data + '" />使用线级全选';
+                            }else if(splitBz!=-1 && inputText!=""){ //没有全选中 传入值不为空
+                                return '<input type="checkbox" id="child' + i + '" class="checkChild" ' +
+                                    'name="checkChild" onchange="syxjqx(this)"  value="' + data + '" />使用线级全选';
+                            }
+                        }
+                    },
+                    //--------------
+                    {
+                        "sClass": "text-center",
+                        "bSortable": false,
+                        "data": "bz",
+                        "render": function(data, type, row, meta) {
+                            if(data!=null){
+                                var splitBz = data.substring(0,1); //获取第一个元素
+                            }
+
+                            if(splitBz==1 && inputText==""){  //选中 且传入值为空
+                                return '<input type="checkbox" value="1" disabled="disabled" ' +
+                                    'checked="checked" id="fxzsymzCheck'+i+'" name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==1 && inputText!=""){ //选中 传入值不为空
+                                return '<input type="checkbox" value="1" checked="checked" id="fxzsymzCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==0 && inputText==""){ //没有选中 传入值为空
+                                return null;
+                            }else if(splitBz==0 && inputText!=""){ //没有选中 传入值不为空
+                                return '<input type="checkbox" value="0" id="fxzsymzCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }
+                        }
+                    },
+                    {
+                        "sClass": "text-center",
+                        "bSortable": false,
+                        "data": "bz",
+                        "render": function(data, type, row, meta) {
+                            if(data!=null){
+                                var splitBz = data.substring(1,2); //获取第二个元素
+                            }
+
+                            if(splitBz==1 && inputText==""){  //选中 且传入值为空
+                                return '<input type="checkbox" value="1" disabled="disabled" ' +
+                                    'checked="checked" id="xzsymzCheck'+i+'" name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==1 && inputText!=""){ //选中 传入值不为空
+                                return '<input type="checkbox" value="1" checked="checked" id="xzsymzCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==0 && inputText==""){ //没有选中 传入值为空
+                                return null;
+                            }else if(splitBz==0 && inputText!=""){ //没有选中 传入值不为空
+                                return '<input type="checkbox" value="0" id="xzsymzCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }
+                        }
+                    },
+                    {
+                        "sClass": "text-center",
+                        "bSortable": false,
+                        "data": "bz",
+                        "render": function(data, type, row, meta) {
+                            if(data!=null){
+                                var splitBz = data.substring(2,3); //获取第三个元素
+                            }
+                            if(splitBz==1 && inputText==""){  //选中 且传入值为空
+                                return '<input type="checkbox" value="1" disabled="disabled" ' +
+                                    'checked="checked" id="tssymzCheck'+i+'" name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==1 && inputText!=""){ //选中 传入值不为空
+                                return '<input type="checkbox" value="1" checked="checked" id="tssymzCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==0 && inputText==""){ //没有选中 传入值为空
+                                return null;
+                            }else if(splitBz==0 && inputText!=""){ //没有选中 传入值不为空
+                                return '<input type="checkbox" value="0" id="tssymzCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }
+                        }
+                    },
+                    {
+                        "sClass": "text-center",
+                        "bSortable": false,
+                        "data": "bz",
+                        "render": function(data, type, row, meta) {
+                            if(data!=null){
+                                var splitBz = data.substring(3,4); //获取第四个元素
+                            }
+                            if(splitBz==1 && inputText==""){  //选中 且传入值为空
+                                return '<input type="checkbox" value="1" disabled="disabled" ' +
+                                    'checked="checked" id="fxzsyzyCheck'+i+'" name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==1 && inputText!=""){ //选中 传入值不为空
+                                return '<input type="checkbox" value="1" checked="checked" id="fxzsyzyCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==0 && inputText==""){ //没有选中 传入值为空,则表格不显示任何东西
+                                return null;
+                            }else if(splitBz==0 && inputText!=""){ //没有选中 传入值不为空
+                                return '<input type="checkbox" value="0" id="fxzsyzyCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }
+                        }
+                    },
+                    {
+                        "sClass": "text-center",
+                        "bSortable": false,
+                        "data": "bz",
+                        "render": function(data, type, row, meta) {
+                            if(data!=null){
+                                var splitBz = data.substring(4,5); //获取第五个元素
+                            }
+                            if(splitBz==1 && inputText==""){  //选中 且传入值为空
+                                return '<input type="checkbox" value="1" disabled="disabled" ' +
+                                    'checked="checked" id="xzsyzyCheck'+i+'" name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==1 && inputText!=""){ //选中 传入值不为空
+                                return '<input type="checkbox" value="1" checked="checked" id="xzsyzyCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==0 && inputText==""){ //没有选中 传入值为空
+                                return null;
+                            }else if(splitBz==0 && inputText!=""){ //没有选中 传入值不为空
+                                return '<input type="checkbox" value="0" id="xzsyzyCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }
+                        }
+                    },
+                    {
+                        "sClass": "text-center",
+                        "bSortable": false,
+                        "data": "bz",
+                        "render": function(data, type, row, meta) {
+                            if(data!=null){
+                                var splitBz = data.substring(5,6); //获取第六个元素
+                            }
+                            if(splitBz==1 && inputText==""){  //选中 且传入值为空
+                                return '<input type="checkbox" value="1" disabled="disabled" ' +
+                                    'checked="checked" id="tssyzyCheck'+i+'" name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==1 && inputText!=""){ //选中 传入值不为空
+                                return '<input type="checkbox" value="1" checked="checked" id="tssyzyCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }else if(splitBz==0 && inputText==""){ //没有选中 传入值为空
+                                return null;
+                            }else if(splitBz==0 && inputText!=""){ //没有选中 传入值不为空
+                                return '<input type="checkbox" value="0" id="tssyzyCheck'+i+'" ' +
+                                    'name="kjywChild" onchange="isCheck(this)">';
+                            }
+                        }
+                    }
+                ]
+
+
+            })
+            .api();//此处需调用api()方法,否则返回的是JQuery对象而不是DataTables的API对象
+
+        //增加序号列
+        table.on('order.dt search.dt', function () {
+            table.column(0, {    //索引"0"代表第1列
+                search: 'applied',
+                order: 'applied'
+            }).nodes().each(function (cell, i) {
+                cell.innerHTML = i + 1;
+            });
+        });
+
+
+    });
+
+    /*]]>*/
+</script>
+
+</body>
+</html>
